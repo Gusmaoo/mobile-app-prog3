@@ -97,6 +97,11 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ token, usuario: publicUser(user) });
 });
 
+// Usuário logado, sempre lido do banco (o celular guarda apenas o token).
+app.get('/api/auth/me', auth, (req, res) => {
+  res.json({ usuario: publicUser(req.user) });
+});
+
 app.post('/api/auth/logout', auth, (req, res) => {
   sessionsDb.prepare('DELETE FROM sessoes WHERE token = ?').run(req.token);
   res.json({ ok: true });

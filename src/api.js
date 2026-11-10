@@ -1,19 +1,21 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
-import {
-  clearSession,
-  getStoredUser,
-  getToken,
-  saveSession
-} from './storage/authStorage';
+// ---------------------------------------------------------------------------
+// Sessão
+// Todos os dados ficam no banco do backend (backend/data/portal.db).
+// O celular guarda SOMENTE o token de login, para não pedir senha a cada
+// abertura do app. O usuário é sempre buscado na API (/auth/me).
+// ---------------------------------------------------------------------------
 
-export {
-  clearSession,
-  getStoredUser,
-  getToken,
-  saveSession
-};
+const TOKEN_KEY = 'portal_token';
+
+const getToken = () => AsyncStorage.getItem(TOKEN_KEY);
+
+export const saveToken = token => AsyncStorage.setItem(TOKEN_KEY, token);
+
+export const clearSession = () => AsyncStorage.removeItem(TOKEN_KEY);
 
 const API_PORT = process.env.EXPO_PUBLIC_API_PORT || '3000';
 
@@ -101,4 +103,15 @@ export async function api(path, options = {}) {
   }
 
   return data;
+}
+
+// Restaura a sessão ao abrir o app: se houver token salvo,
+// busca os dados atualizados do usuário no banco.
+export async function getCurrentUser() {
+  if (!(await getToken())) {
+    return null;
+  }
+
+  const data = await api('/auth/me');
+  return data.usuario;
 }

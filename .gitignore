@@ -3,3 +3,10 @@ node_modules/
 dist/
 .env
 *.log
+
+# Banco de dados: backend/data/portal.db É versionado.
+# Ficam de fora apenas as sessões de login e arquivos temporários do SQLite.
+backend/data/sessoes.db
+backend/data/*.db-wal
+backend/data/*.db-shm
+backend/data/*.db-journal

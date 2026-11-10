@@ -12,8 +12,7 @@ import { StatusBar } from 'expo-status-bar';
 import {
   api,
   clearSession,
-  getStoredUser,
-  saveSession,
+  getCurrentUser,
   setUnauthorizedHandler
 } from './src/api';
 
@@ -56,9 +55,15 @@ export default function App() {
 
   useEffect(() => {
     async function restore() {
-      const storedUser = await getStoredUser();
-      setUser(storedUser);
-      setReady(true);
+      try {
+        // Usuário vem do banco (via API); o celular guarda apenas o token.
+        setUser(await getCurrentUser());
+      } catch {
+        // Sem conexão com a API ou sessão inválida: volta para o login.
+        setUser(null);
+      } finally {
+        setReady(true);
+      }
     }
 
     restore();

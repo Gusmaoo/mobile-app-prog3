@@ -1,8 +1,0 @@
-node_modules/
-
-# O banco de dados (data/portal.db) É versionado.
-# Ficam de fora apenas as sessões de login e arquivos temporários do SQLite.
-data/sessoes.db
-data/*.db-wal
-data/*.db-shm
-data/*.db-journal

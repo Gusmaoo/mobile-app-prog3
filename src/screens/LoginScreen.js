@@ -8,7 +8,7 @@ import {
   View
 } from 'react-native';
 
-import { api, saveSession } from '../api';
+import { api, saveToken } from '../api';
 import {
   Button,
   Card,
@@ -48,7 +48,7 @@ export default function LoginScreen({
         })
       });
 
-      await saveSession(data.token, data.usuario);
+      await saveToken(data.token);
       onLogin(data.usuario);
     } catch (error) {
       setErro(error.message);
