@@ -1,11 +1,22 @@
 // Apaga o banco SQLite e recria com os dados de demonstração.
+// ATENÇÃO: apaga TODOS os dados cadastrados. Exige --confirmar.
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DB_FILE = process.env.DB_FILE || path.join(__dirname, '..', 'data', 'portal.db');
+if (!process.argv.includes('--confirmar')) {
+  console.log('Isto APAGA todos os dados do banco (alunos, notas, frequências, agendamentos).');
+  console.log('Para confirmar, rode:  npm run db:reset -- --confirmar');
+  process.exit(1);
+}
 
-for (const file of [DB_FILE, `${DB_FILE}-wal`, `${DB_FILE}-shm`]) {
-  fs.rmSync(file, { force: true });
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'portal.db');
+const SESSIONS_FILE = process.env.SESSIONS_FILE || path.join(DATA_DIR, 'sessoes.db');
+
+for (const base of [DB_FILE, SESSIONS_FILE]) {
+  for (const file of [base, `${base}-wal`, `${base}-shm`, `${base}-journal`]) {
+    fs.rmSync(file, { force: true });
+  }
 }
 
 require('./db');

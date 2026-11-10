@@ -5,15 +5,25 @@ const { DatabaseSync } = require('node:sqlite');
 const { hashPassword } = require('./auth');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
+
+// portal.db  -> dados da aplicação (VERSIONADO no Git)
+// sessoes.db -> tokens de login (NÃO versionado: ignorado no .gitignore)
 const DB_FILE = process.env.DB_FILE || path.join(DATA_DIR, 'portal.db');
+const SESSIONS_FILE = process.env.SESSIONS_FILE || path.join(DATA_DIR, 'sessoes.db');
 
 fs.mkdirSync(path.dirname(DB_FILE), { recursive: true });
+fs.mkdirSync(path.dirname(SESSIONS_FILE), { recursive: true });
 
 const db = new DatabaseSync(DB_FILE);
 
+// journal_mode = DELETE grava cada alteração direto no portal.db
+// (sem arquivo -wal pendente), então o arquivo commitado está sempre completo.
 db.exec(`
+  PRAGMA journal_mode = DELETE;
   PRAGMA foreign_keys = ON;
-  PRAGMA journal_mode = WAL;
+
+  -- sessões foram movidas para sessoes.db (fora do Git)
+  DROP TABLE IF EXISTS sessoes;
 
   CREATE TABLE IF NOT EXISTS usuarios (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -26,12 +36,6 @@ db.exec(`
     turma       TEXT,
     telefone    TEXT,
     disciplina  TEXT,
-    criado_em   TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS sessoes (
-    token       TEXT PRIMARY KEY,
-    usuario_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     criado_em   TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -152,4 +156,16 @@ function seed() {
 
 seed();
 
-module.exports = { db, DB_FILE };
+const sessionsDb = new DatabaseSync(SESSIONS_FILE);
+
+sessionsDb.exec(`
+  PRAGMA journal_mode = DELETE;
+
+  CREATE TABLE IF NOT EXISTS sessoes (
+    token       TEXT PRIMARY KEY,
+    usuario_id  INTEGER NOT NULL,
+    criado_em   TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+`);
+
+module.exports = { db, sessionsDb, DB_FILE, SESSIONS_FILE };

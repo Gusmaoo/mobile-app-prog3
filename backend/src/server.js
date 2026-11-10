@@ -2,7 +2,7 @@ const os = require('node:os');
 const express = require('express');
 const cors = require('cors');
 
-const { db, DB_FILE } = require('./db');
+const { db, sessionsDb, DB_FILE } = require('./db');
 const { verifyPassword, hashPassword, newToken } = require('./auth');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -51,9 +51,10 @@ function auth(req, _res, next) {
   const token = header.startsWith('Bearer ') ? header.slice(7) : null;
   if (!token) fail(401, 'Sessão expirada. Entre novamente.');
 
-  const user = db.prepare(`
-    SELECT u.* FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id WHERE s.token = ?
-  `).get(token);
+  const sessao = sessionsDb.prepare('SELECT usuario_id FROM sessoes WHERE token = ?').get(token);
+  const user = sessao
+    ? db.prepare('SELECT * FROM usuarios WHERE id = ?').get(sessao.usuario_id)
+    : null;
 
   if (!user) fail(401, 'Sessão expirada. Entre novamente.');
 
@@ -91,13 +92,13 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   const token = newToken();
-  db.prepare('INSERT INTO sessoes (token, usuario_id) VALUES (?, ?)').run(token, user.id);
+  sessionsDb.prepare('INSERT INTO sessoes (token, usuario_id) VALUES (?, ?)').run(token, user.id);
 
   res.json({ token, usuario: publicUser(user) });
 });
 
 app.post('/api/auth/logout', auth, (req, res) => {
-  db.prepare('DELETE FROM sessoes WHERE token = ?').run(req.token);
+  sessionsDb.prepare('DELETE FROM sessoes WHERE token = ?').run(req.token);
   res.json({ ok: true });
 });
 

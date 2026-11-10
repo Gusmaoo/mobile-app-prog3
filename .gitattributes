@@ -1,0 +1,3 @@
+# Arquivos do banco SQLite são binários: o Git não deve tentar
+# converter quebras de linha nem mesclar linha a linha.
+*.db binary
